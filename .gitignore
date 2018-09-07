@@ -1,5 +1,4 @@
 _build
 /deps
-
-# Uncomment if project is a library
-# /mix.lock
+/doc
+/mix.lock
