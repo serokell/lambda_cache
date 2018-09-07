@@ -20,7 +20,7 @@ defmodule LambdaCache do
       end
 
       def start_link(args) do
-        GenServer.start_link(__MODULE__, args, Keyword.merge([name: __MODULE__], unquote(options)))
+        GenServer.start_link(__MODULE__, args, unquote(options))
       end
 
       def interval do
@@ -43,7 +43,7 @@ defmodule LambdaCache do
         {:noreply, %{data: refresh(), timer: schedule_refresh(self(), interval())}}
       end
 
-      def retrieve(pid \\ __MODULE__) do
+      def retrieve(pid) do
         GenServer.call(pid, :retrieve)
       end
 
