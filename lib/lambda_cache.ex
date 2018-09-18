@@ -10,6 +10,8 @@ defmodule LambdaCache do
     quote location: :keep do
       @behaviour LambdaCache
 
+      require Logger
+
       use GenServer
 
       def child_spec(args \\ []) do
@@ -30,6 +32,8 @@ defmodule LambdaCache do
       defoverridable interval: 0
 
       def init(args) do
+        # Don't handle errors on the first refresh. If it doesn't work at init,
+        # it's probably broken.
         {:ok, %{data: refresh(), timer: schedule_refresh(self(), interval())}}
       end
 
@@ -37,10 +41,18 @@ defmodule LambdaCache do
         {:reply, state.data, state}
       end
 
-      def handle_info(:refresh, %{timer: old_timer}) do
+      def handle_info(:refresh, %{data: old_data, timer: old_timer}) do
         Process.cancel_timer(old_timer)
 
-        {:noreply, %{data: refresh(), timer: schedule_refresh(self(), interval())}}
+        data = try do
+          refresh()
+        rescue
+          e ->
+            Logger.error(Exception.format(:error, e))
+            old_data
+        end
+
+        {:noreply, %{data: data, timer: schedule_refresh(self(), interval())}}
       end
 
       def retrieve(pid) do
